@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql" // Neon is Postgres-compatible
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  shareCode    String   @unique
+  couple       Couple?  @relation(fields: [coupleId], references: [id])
+  coupleId     String?  
+  sentRequests     Request[] @relation("SentRequests")
+  receivedRequests Request[] @relation("ReceivedRequests")
+  SavedDateIdeas   SavedDateIdea[]
+}
+
+model Couple {
+  id             String   @id @default(uuid())
+  coupleName     String
+  users          User[]   
+  startDate      DateTime @default(now()) 
+}
+
+model DateIdea {
+  id          String   @id @default(uuid())
+  idea        String
+  createdAt   DateTime @default(now())
+  savedBy     SavedDateIdea[] 
+}
+
+model SavedDateIdea {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  dateIdea   DateIdea @relation(fields: [dateIdeaId], references: [id])
+  dateIdeaId String
+
+  @@unique([userId, dateIdeaId])
+}
+
+model Request {
+  id         String   @id @default(uuid())
+  sender     User     @relation("SentRequests", fields: [senderId], references: [id])
+  senderId   String
+  receiver   User     @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  receiverId String
+  status     String   @default("pending") // 'pending', 'accepted', 'rejected'
+  dateIdea   DateIdea @relation(fields: [dateIdeaId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
